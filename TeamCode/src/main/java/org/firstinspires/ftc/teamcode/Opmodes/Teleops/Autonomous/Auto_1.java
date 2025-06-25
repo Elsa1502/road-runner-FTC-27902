@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode.Opmodes.Teleops.Autonomous;
+
 import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -12,15 +13,15 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrive;
-
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrive;
 
 @Config
 @Autonomous(name = "Auto1", group = "Autonomous")
 public class Auto_1 extends LinearOpMode {
+
     public class Arm {
         private DcMotorEx arm;
 
@@ -42,16 +43,8 @@ public class Auto_1 extends LinearOpMode {
 
                 double pos = arm.getCurrentPosition();
                 packet.put("armPos", pos);
-                if (pos < 3000.0) {
-                    return true;
-                } else {
-                    arm.setPower(0);
-                    return false;
-                }
+                return pos < 3000.0;
             }
-        }
-        public Action armUp() {
-            return new ArmUp();
         }
 
         public class ArmDown implements Action {
@@ -66,15 +59,15 @@ public class Auto_1 extends LinearOpMode {
 
                 double pos = arm.getCurrentPosition();
                 packet.put("armPos", pos);
-                if (pos > 100.0) {
-                    return true;
-                } else {
-                    arm.setPower(0);
-                    return false;
-                }
+                return pos > 100.0;
             }
         }
-        public Action armDown(){
+
+        public Action armUp() {
+            return new ArmUp();
+        }
+
+        public Action armDown() {
             return new ArmDown();
         }
     }
@@ -93,9 +86,6 @@ public class Auto_1 extends LinearOpMode {
                 return false;
             }
         }
-        public Action closeClaw() {
-            return new CloseClaw();
-        }
 
         public class OpenClaw implements Action {
             @Override
@@ -104,6 +94,11 @@ public class Auto_1 extends LinearOpMode {
                 return false;
             }
         }
+
+        public Action closeClaw() {
+            return new CloseClaw();
+        }
+
         public Action openClaw() {
             return new OpenClaw();
         }
@@ -116,7 +111,7 @@ public class Auto_1 extends LinearOpMode {
         Claw claw = new Claw(hardwareMap);
         Arm arm = new Arm(hardwareMap);
 
-        // vision here that outputs position
+        // Simulated vision output
         int visionOutputPosition = 1;
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
@@ -131,18 +126,15 @@ public class Auto_1 extends LinearOpMode {
                 .lineToX(47.5)
                 .waitSeconds(3);
 
-
         Action trajectoryActionCloseOut = tab1.endTrajectory().fresh()
                 .strafeTo(new Vector2d(48, 12))
                 .build();
 
-        // actions that need to happen on init; for instance, a claw tightening.
+        // Initialization actions
         Actions.runBlocking(claw.closeClaw());
 
-
         while (!isStopRequested() && !opModeIsActive()) {
-            int position = visionOutputPosition;
-            telemetry.addData("Position during Init", position);
+            telemetry.addData("Position during Init", visionOutputPosition);
             telemetry.update();
         }
 
@@ -151,10 +143,9 @@ public class Auto_1 extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        if (isStarted()) return;
+        if (isStopRequested()) return;
 
-        Action trajectoryActionChosen;
-        trajectoryActionChosen = tab1.build();
+        Action trajectoryActionChosen = tab1.build();
 
         Actions.runBlocking(
                 new SequentialAction(
